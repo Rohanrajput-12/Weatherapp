@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState,useRef } from 'react';
 import './App.css';
+import { FiSearch } from "react-icons/fi";
+
+
 
 const api = {
   key: "23c5460538d20bb69cf3073115cf5272",
@@ -12,6 +15,8 @@ const Weather = () => {
   const [weather, setWeather] = useState({});
   const [error, setError] = useState('');
   const [suggestions, setSuggestions] = useState([]);
+  const debounceRef = useRef(null);
+  
 
   const fetchCitySuggestions = async (input) => {
     try {
@@ -32,16 +37,22 @@ const Weather = () => {
     }
   };
 
-  const handleInputChange = async (e) => {
-    const value = e.target.value;
-    setQuery(value);
 
-    if (value.length > 2) {
+
+const handleInputChange = (e) => {
+  const value = e.target.value;
+  setQuery(value);
+
+  clearTimeout(debounceRef.current);
+
+  if (value.length > 2) {
+    debounceRef.current = setTimeout(() => {
       fetchCitySuggestions(value);
-    } else {
-      setSuggestions([]);
-    }
-  };
+    }, 500); // wait 500ms after typing stops
+  } else {
+    setSuggestions([]);
+  }
+};
 
   const handleSuggestionClick = (item) => {
     setQuery(item);
@@ -86,7 +97,7 @@ const Weather = () => {
 
   return (
     <main>
-      <div className='search-box' style={{ position: 'relative' }}>
+      <div className='search-box' style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
         <input
           className='search-bar'
           type="text"
@@ -94,10 +105,22 @@ const Weather = () => {
           value={query}
           onChange={handleInputChange}
           onKeyDown={search}
+          style={{ flex: 1 }}
+        />
+
+        <FiSearch
+          className="search-icon"
+          onClick={() => search({ key: "Enter" })}
+          style={{
+            cursor: 'pointer',
+            fontSize: '24px',
+            marginLeft: '8px',
+            color: 'white'
+          }}
         />
 
         {suggestions.length > 0 && (
-          <ul className="suggestions">
+          <ul className="suggestions" style={{ position: 'absolute', top: '100%', left: 0, zIndex: 1 }}>
             {suggestions.map((item, index) => (
               <li key={index} onClick={() => handleSuggestionClick(item)}>
                 {item}
@@ -106,6 +129,7 @@ const Weather = () => {
           </ul>
         )}
       </div>
+
 
       {error && <p className='error'>{error}</p>}
 
